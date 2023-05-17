@@ -1,61 +1,65 @@
 name: Build lxml wheel
 
 on:
-  push:
-    tags:
-      - '*'
+  push: {}
 
 jobs:
-  test:
-    runs-on: windows-latest
-    permissions:
-      contents: write
+  build:
+    strategy:
+      fail-fast: true
+      matrix:
+        os:
+          - ubuntu-latest
+#          - windows-2019
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v3
         with:
           repository: lxml/lxml
-          ref: lxml-4.9.1
-      - name: Fix lib names in lxml build config
+          ref: c6b7e621e4696c02bf8f6ea423ffbbf2109748ab
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.12-dev"
+      - name: Install python deps
+        run: |
+          pip install -U cython wheel
+      - name: Build lxml wheel
+        shell: bash
+        run: >
+          STATIC_DEPS=true
+          WITH_CYTHON=true
+          CFLAGS="-fPIC"
+          LDFLAGS="-fPIC"
+          LIBXML2_VERSION=2.10.3
+          LIBXSLT_VERSION=1.1.37
+          MULTICORE=2
+          pip wheel
+          -w dist
+          -vvv
+          .
+      - name: Validate built wheel
         shell: bash
         run: |
-          patch -p1 <<EOF
-          diff --git a/setupinfo.py b/setupinfo.py
-          index 67589147..b5f9129f 100644
-          --- a/setupinfo.py
-          +++ b/setupinfo.py
-          @@ -274,5 +274,3 @@ def libraries():
-              if sys.platform in ('win32',):
-          -        libs = ['libxslt', 'libexslt', 'libxml2', 'iconv']
-          -        if OPTION_STATIC:
-          -            libs = ['%s_a' % lib for lib in libs]
-          +        libs = ['libxslt', 'libexslt', 'libxml2', 'iconv', 'lzma']
-                  libs.extend(['zlib', 'WS2_32'])
-          EOF
-      - uses: actions/setup-python@v3
+          pip install ./dist/lxml-*.whl
+          python -c 'import lxml.etree;[print(f"lxml.etree.{k} == {getattr(lxml.etree,k)}") for k in ["__version__","LIBXML_VERSION","LIBXSLT_VERSION"]]'
+      - uses: actions/upload-artifact@v3
         with:
-          python-version: "3.11-dev"
-      - name: Install python deps
-        shell: pwsh
-        run: |
-          pip install -U Cython wheel
-      - name: Build libxml2 + libxslt
-        shell: pwsh
-        run: |
-          $p="C:\vcpkg\packages"
-          $t="x64-windows-static"
-          vcpkg --triplet=$t install libxml2[core] libxslt[core]
-          "LIBRARY=$p\libxml2_$t\lib;$p\libxslt_$t\lib;$p\libiconv_$t\lib;$p\zlib_$t\lib;$p\liblzma_$t\lib" >> $env:GITHUB_ENV
-          "INCLUDE=$p\libxml2_$t\include;$p\libxslt_$t\include;$p\libiconv_$t\include;$p\zlib_$t\include;$p\liblzma_$t\include" >> $env:GITHUB_ENV
-      - name: Build lxml wheel
-        shell: pwsh
-        run: |
-          "LIBRARY=" + $env:LIBRARY
-          "INCLUDE=" + $env:INCLUDE
-          python setup.py build --with-cython --static
-          python setup.py bdist_wheel --with-cython --static
-          sha256sum dist/lxml*.whl
+          name: ${{ matrix.os }}
+          path: ./dist/lxml-*.whl
+  deploy:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    needs:
+      - build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - run: mkdir dist
+      - uses: actions/download-artifact@v3
+        with:
+          path: ./dist
       - name: Release
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: ncipollo/release-action@5ffcfca321b7176797b3ae28f57be783149725c0
+        uses: ncipollo/release-action@eb05307dcee34deaad054e98128088a30d7980dc
         with:
-          artifacts: dist/lxml*.whl
+          artifacts: dist/**/*.whl
