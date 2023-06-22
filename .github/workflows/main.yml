@@ -17,7 +17,7 @@ jobs:
       - uses: actions/checkout@v3
         with:
           repository: lxml/lxml
-          ref: c6b7e621e4696c02bf8f6ea423ffbbf2109748ab
+          ref: ec0b59be3074c9ce83ba01b71b7218d3d6069954
       - uses: actions/setup-python@v4
         with:
           python-version: "3.12-dev"
