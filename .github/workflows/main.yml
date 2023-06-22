@@ -23,7 +23,7 @@ jobs:
           python-version: "3.12-dev"
       - name: Install python deps
         run: |
-          pip install -U cython wheel
+          pip install -U cython setuptools==67.8.0 wheel
       - name: Build lxml wheel
         shell: bash
         run: >
