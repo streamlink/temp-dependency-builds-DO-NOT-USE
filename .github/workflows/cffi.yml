@@ -1,0 +1,48 @@
+name: Build cffi wheel
+
+on:
+  push: {}
+
+jobs:
+  build:
+    strategy:
+      fail-fast: true
+      matrix:
+        os:
+          - windows-2019
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        run: |
+          hg clone --rev 3c41b86ccd01345af1c59294e3a9899ba2b31e9f https://foss.heptapod.net/pypy/cffi .
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.12-dev"
+      - name: Install python deps
+        run: |
+          python -m pip install -U pip build wheel
+          python -m pip install -U -r requirements.txt
+      - name: Build cffi wheel
+        run: |
+          python -m build --outdir dist --wheel
+      - uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.os }}
+          path: ./dist/*.whl
+  deploy:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    needs:
+      - build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - run: mkdir dist
+      - uses: actions/download-artifact@v3
+        with:
+          path: ./dist
+      - name: Release
+        uses: ncipollo/release-action@eb05307dcee34deaad054e98128088a30d7980dc
+        with:
+          artifacts: dist/**/*.whl
