@@ -1,0 +1,42 @@
+name: Build zstandard wheel
+
+on:
+  push: {}
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14-dev"
+      - name: Build wheel
+        shell: bash
+        run: |
+          python -m pip wheel -w dist zstandard==0.23.0
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.os }}
+          path: ./dist/*.whl
+  deploy:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    needs:
+      - build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - run: mkdir dist
+      - uses: actions/download-artifact@v4
+        with:
+          path: ./dist
+      - name: Release
+        uses: ncipollo/release-action@36e78ab6296394ce36f72f6488e68c2353b50514
+        with:
+          artifacts: dist/**/*.whl
