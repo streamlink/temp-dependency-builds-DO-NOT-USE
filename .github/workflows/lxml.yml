@@ -10,34 +10,30 @@ jobs:
       matrix:
         os:
           - ubuntu-latest
-          - windows-2019
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
         with:
           repository: lxml/lxml
-          ref: a9f31d9ba0f6db7b0c6576b4b9014a4ea7649eca
+          ref: 4660da0bd7e3670919a20aef8fba1e9f7cb9391e
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.13-dev"
+          python-version: "3.14-dev"
       - name: Install python deps
         run: |
-          pip install -U cython setuptools wheel
+          pip install -U build wheel
       - name: Build lxml wheel
         shell: bash
         run: >
+          LIBXML2_VERSION=2.13.8
+          LIBXSLT_VERSION=1.1.43
           STATIC_DEPS=true
           WITH_CYTHON=true
-          CFLAGS="-fPIC"
-          LDFLAGS="-fPIC"
-          LIBXML2_VERSION=2.12.6
-          LIBXSLT_VERSION=1.1.39
+          CFLAGS="-O3 -g1 -pipe -fPIC -flto"
+          LDFLAGS="-fPIC -flto"
           MULTICORE=2
-          pip wheel
-          -w dist
-          -vvv
-          .
+          python -m build --wheel
       - name: Validate built wheel
         shell: bash
         run: |
@@ -60,6 +56,6 @@ jobs:
         with:
           path: ./dist
       - name: Release
-        uses: ncipollo/release-action@1cbdc80532ba923d3d81ebd1cece305c437b8d66
+        uses: ncipollo/release-action@36e78ab6296394ce36f72f6488e68c2353b50514
         with:
           artifacts: dist/**/*.whl
