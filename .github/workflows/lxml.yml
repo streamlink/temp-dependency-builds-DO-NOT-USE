@@ -10,29 +10,32 @@ jobs:
       matrix:
         os:
           - ubuntu-latest
+          - windows-latest
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
         with:
           repository: lxml/lxml
-          ref: 4660da0bd7e3670919a20aef8fba1e9f7cb9391e
+          ref: 2a67034bc21150e9cc14500f65c41fa4e9d51c9b
       - uses: actions/setup-python@v5
         with:
           python-version: "3.14-dev"
       - name: Install python deps
         run: |
-          pip install -U build wheel
+          pip install -U build wheel cython
       - name: Build lxml wheel
         shell: bash
-        run: >
-          LIBXML2_VERSION=2.13.8
-          LIBXSLT_VERSION=1.1.43
-          STATIC_DEPS=true
-          WITH_CYTHON=true
-          CFLAGS="-O3 -g1 -pipe -fPIC -flto"
-          LDFLAGS="-fPIC -flto"
-          MULTICORE=2
+        run: |
+          export LIBXML2_VERSION=2.14.4
+          export LIBXSLT_VERSION=1.1.43
+          export STATIC_DEPS=true
+          export WITH_CYTHON=true
+          export MULTICORE=$(nproc)
+          if [[ $(uname) == "Linux" ]]; then
+            export CFLAGS="-O3 -g1 -pipe -fPIC -flto"
+            export LDFLAGS="-fPIC -flto"
+          fi
           python -m build --wheel
       - name: Validate built wheel
         shell: bash
