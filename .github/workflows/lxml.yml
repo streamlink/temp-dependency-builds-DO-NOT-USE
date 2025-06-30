@@ -11,6 +11,10 @@ jobs:
         os:
           - ubuntu-latest
           - windows-latest
+        python:
+          - "3.13t"
+          - "3.14-dev"
+          - "3.14t-dev"
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     steps:
@@ -20,7 +24,7 @@ jobs:
           ref: 2a67034bc21150e9cc14500f65c41fa4e9d51c9b
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.14-dev"
+          python-version: ${{ matrix.python }}
       - name: Install python deps
         run: |
           pip install -U build wheel cython
@@ -44,7 +48,7 @@ jobs:
           python -c 'import lxml.etree;[print(f"lxml.etree.{k} == {getattr(lxml.etree,k)}") for k in ["__version__","LIBXML_VERSION","LIBXSLT_VERSION"]]'
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.os }}
+          name: ${{ matrix.os }}_${{ matrix.python }}
           path: ./dist/lxml-*.whl
   deploy:
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
