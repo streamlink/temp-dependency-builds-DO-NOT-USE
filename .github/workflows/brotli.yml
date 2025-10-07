@@ -12,9 +12,8 @@ jobs:
           - ubuntu-latest
           - windows-latest
         python:
-          - "3.13t"
-          - "3.14-dev"
-          - "3.14t-dev"
+          - "3.14"
+          - "3.14t"
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     steps:
@@ -24,7 +23,7 @@ jobs:
       - name: Build wheel
         shell: bash
         run: |
-          python -m pip wheel -w dist brotli==1.1.0
+          python -m pip wheel -w dist git+https://github.com/google/brotli@34e43eb020babe4a6eb2ef9b5edfdac8cade4b18
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.os }}_${{ matrix.python }}
