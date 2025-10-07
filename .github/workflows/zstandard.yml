@@ -12,9 +12,8 @@ jobs:
           - ubuntu-latest
           - windows-latest
         python:
-          - "3.13t"
-          - "3.14-dev"
-          - "3.14t-dev"
+          - "3.14"
+          - "3.14t"
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     steps:
@@ -24,8 +23,7 @@ jobs:
       - name: Build wheel
         shell: bash
         run: |
-          # https://github.com/indygreg/python-zstandard/pull/243
-          python -m pip wheel -w dist git+https://github.com/indygreg/python-zstandard@24b926914d617f061d9d9b5f947412e52167894e
+          python -m pip wheel -w dist git+https://github.com/indygreg/python-zstandard@7a77a7510b8ce068e4a103d29aea1b5ec829d8b6
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.os }}_${{ matrix.python }}
