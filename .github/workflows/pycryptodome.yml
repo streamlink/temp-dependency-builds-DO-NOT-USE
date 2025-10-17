@@ -1,0 +1,45 @@
+name: Build pycryptodome wheel
+
+on:
+  push: {}
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+        python:
+          - "3.14t"
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Build wheel
+        shell: bash
+        run: |
+          python -m pip wheel -w dist git+https://github.com/Legrandin/pycryptodome@cde63f8f9b64f1c8cd86249128cfd5986c2c43af
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.os }}_${{ matrix.python }}
+          path: ./dist/*.whl
+  deploy:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    needs:
+      - build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - run: mkdir dist
+      - uses: actions/download-artifact@v4
+        with:
+          path: ./dist
+      - name: Release
+        uses: ncipollo/release-action@36e78ab6296394ce36f72f6488e68c2353b50514
+        with:
+          artifacts: dist/**/*.whl
