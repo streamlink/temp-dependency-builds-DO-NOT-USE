@@ -14,7 +14,6 @@ jobs:
           - windows-latest
         python:
           - "3.14t"
-          - "3.15-dev"
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     steps:
@@ -24,7 +23,7 @@ jobs:
       - name: Build wheel
         shell: bash
         run: |
-          python -m pip wheel -w dist git+https://github.com/Legrandin/pycryptodome@cde63f8f9b64f1c8cd86249128cfd5986c2c43af
+          python -m pip wheel -w dist git+https://github.com/Legrandin/pycryptodome@29372bd5ae21b02a50f07181d1f82721b3ea81bb
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           archive: false
