@@ -14,7 +14,6 @@ jobs:
           - windows-latest
         python:
           - "3.14t"
-          - "3.15-dev"
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     steps:
@@ -24,7 +23,7 @@ jobs:
       - name: Build wheel
         shell: bash
         run: |
-          python -m pip wheel -w dist git+https://github.com/google/brotli@ab685df8343d8046226ece980408e958c10f9085
+          python -m pip wheel -w dist git+https://github.com/google/brotli@db24a98aed38a16de78cc05ca15cdd8dc2a0d92d
       - uses: actions/upload-artifact@v7
         with:
           archive: false
